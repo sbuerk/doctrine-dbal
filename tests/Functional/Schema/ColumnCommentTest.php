@@ -98,6 +98,46 @@ class ColumnCommentTest extends FunctionalTestCase
         $this->assertColumnComment('id', $comment2);
     }
 
+    #[DataProvider('alterColumnCommentProvider')]
+    public function testAlterAddColumnWithComment(string $comment1, string $comment2): void
+    {
+        $table1 = Table::editor()
+            ->setUnquotedName('column_comments')
+            ->setColumns(
+                Column::editor()
+                    ->setUnquotedName('id')
+                    ->setTypeName(Types::INTEGER)
+                    ->setComment($comment1)
+                    ->create(),
+            )
+            ->create();
+
+        $this->dropAndCreateTable($table1);
+
+        $table2 = $table1->edit()
+            ->addColumn(
+                Column::editor()
+                    ->setUnquotedName('added_column')
+                    ->setTypeName(Types::JSON)
+                    ->setComment($comment2)
+                    ->create(),
+            )
+            ->create();
+
+        $schemaManager = $this->connection->createSchemaManager();
+
+        $diff = $schemaManager->createComparator()
+            ->compareTables($table1, $table2);
+
+        $sqls = $this->connection->getDatabasePlatform()->getAlterTableSQL($diff);
+
+        foreach ($sqls as $sql) {
+            $this->connection->executeStatement($sql);
+        }
+
+        $this->assertColumnComment('added_column', $comment2);
+    }
+
     /** @return mixed[][] */
     public static function alterColumnCommentProvider(): iterable
     {
@@ -107,6 +147,7 @@ class ColumnCommentTest extends FunctionalTestCase
             'Empty to zero' => ['', '0'],
             'Zero to empty' => ['0', ''],
             'Non-empty to non-empty' => ['foo', 'bar'],
+            '(DBCType-json)' => ['(DBCType-json)', '(DBCType-json)'],
         ];
     }
 
