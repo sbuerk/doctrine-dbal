@@ -767,6 +767,8 @@ class SQLitePlatform extends AbstractPlatform
 
             switch (true) {
                 case isset($definition['columnDefinition']) || $definition['autoincrement']:
+                // @todo inline comments not supported, use following to enforce full recreation:
+                // case isset($definition['comment']) && $definition['comment'] !== '':
                 case $type instanceof Types\DateTimeType && $definition['default'] === $this->getCurrentTimestampSQL():
                 case $type instanceof Types\DateType && $definition['default'] === $this->getCurrentDateSQL():
                 case $type instanceof Types\TimeType && $definition['default'] === $this->getCurrentTimeSQL():
